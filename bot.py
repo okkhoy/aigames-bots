@@ -86,8 +86,8 @@ class Bot(object):
                         stderr.flush()
                         
                 elif command == 'opponent_moves':
-                	# don't do anything when opponent moved
-                	pass
+					# don't do anything when opponent moved
+					pass
 
                 else:
                     stderr.write('Unknown command: %s\n' % (command))
@@ -113,11 +113,23 @@ class Bot(object):
         for i in range(1, len(options), 2):
 
             if map_type == 'super_regions':
+            	# corresponds to the command:
+            	# setup_map super_regions [id rewards ...]
+            	# where id = super region id
+            	# rewards = the corresponding worth (and bonus armies)
+            	# <id rewards> pair can repeat itself any number of times 
+            	# corresponding to each super region and its rewards.
 
                 super_region = SuperRegion(options[i], int(options[i + 1]))
                 self.map.super_regions.append(super_region)
 
             elif map_type == 'regions':
+            	# corresponds to the command:
+            	# setup_map regions [region_id super_region_id ...]
+            	# where region_id correspond to the regions
+            	# super_region_id corresponds to the parent super region
+            	# <region_id super_region_id> pair can repeat itself any number of times 
+            	# corresponding to each region and its super region
 
                 super_region = self.map.get_super_region_by_id(options[i + 1])
                 region = Region(options[i], super_region)
@@ -126,7 +138,14 @@ class Bot(object):
                 super_region.regions.append(region)
 
             elif map_type == 'neighbors':
-
+				# corresponds to the command:
+            	# setup_map neighbors [region_id [<neighbouring_regions>, ...] ...]
+            	# This gives the connectivity of region with its neighbors. 
+            	# neighbouring_regions is a comma separated list of neighbors of region_id
+            	# <region_id <neighbouring_regions> > pair can repeat itself any number of times 
+            	# corresponding to each region and its neighbors
+            	# list of neighbors is comma separated and shows one way connectivity b/w region &
+            	# neighbors
                 region = self.map.get_region_by_id(options[i])
                 neighbours = [self.map.get_region_by_id(region_id) for region_id in options[i + 1].split(',')]
 
@@ -135,7 +154,7 @@ class Bot(object):
                     neighbour.neighbours.append(region)
 
         if map_type == 'neighbors':
-            
+            # update the connectivity across super regions
             for region in self.map.regions:
 
                 if region.is_on_super_region_border:
@@ -152,6 +171,13 @@ class Bot(object):
         '''
         Method to update our map every round.
         '''
+    	
+    	# for now I don't want to consider fog of war.
+    	# the www.warlight.net game does not really have a fog of war
+    	# (or at least the single player vs AI game) 
+    	for region in self.map.regions:
+    		region.is_fog = False
+    		
         for i in range(0, len(options), 3):
             
             region = self.map.get_region_by_id(options[i])
@@ -194,11 +220,10 @@ class Bot(object):
                 troops_remaining -= 2
                 
             else:
+				placements.append([region.id, 1])
 
-                 placements.append([region.id, 1])
-
-                 region.troop_count += 1
-                 troops_remaining -= 1
+				region.troop_count += 1
+				troops_remaining -= 1
 
             region_index += 1
             
